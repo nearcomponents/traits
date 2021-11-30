@@ -13,7 +13,7 @@ pub use mac::*;
 pub use variable::*;
 pub use xof::*;
 
-/// Define test
+/// Define hash function test
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 macro_rules! new_test {
@@ -39,7 +39,7 @@ macro_rules! new_test {
     };
 }
 
-/// Define benchmark
+/// Define [`Update`][crate::Update] impl benchmark
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 macro_rules! bench_update {

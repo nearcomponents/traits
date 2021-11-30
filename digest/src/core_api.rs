@@ -4,10 +4,7 @@
 //! core algorithm wrapped by the wrapper types, which implement the
 //! higher-level traits.
 use crate::InvalidOutputSize;
-use generic_array::{
-    typenum::{IsLess, Le, NonZero, U256},
-    ArrayLength,
-};
+use generic_array::typenum::{IsLess, Le, NonZero, U256};
 
 pub use crypto_common::{AlgorithmName, Block, BlockSizeUser, OutputSizeUser, Reset};
 
@@ -72,22 +69,49 @@ pub trait XofReaderCore: BlockSizeUser {
 }
 
 /// Core trait for hash functions with variable output size.
-pub trait VariableOutputCore: UpdateCore + BufferKindUser + Sized
+///
+/// Maximum output size is equal to [`OutputSizeUser::OutputSize`].
+/// Users are expected to truncate result returned by the
+/// [`finalize_variable_core`] to `output_size` passed to the [`new`] method
+/// during construction. Truncation side is defined by the [`TRUNC_SIDE`]
+/// associated constant.
+///
+/// [`finalize_variable_core`]: VariableOutputCore::finalize_variable_core
+/// [`new`]: VariableOutputCore::new
+/// [`TRUNC_SIDE`]: VariableOutputCore::TRUNC_SIDE
+pub trait VariableOutputCore: UpdateCore + OutputSizeUser + BufferKindUser + Sized
 where
     Self::BlockSize: IsLess<U256>,
     Le<Self::BlockSize, U256>: NonZero,
 {
-    /// Maximum output size.
-    type MaxOutputSize: ArrayLength<u8>;
+    /// Side which should be used in a truncated result.
+    const TRUNC_SIDE: TruncSide;
 
     /// Initialize hasher state for given output size.
     ///
     /// Returns [`InvalidOutputSize`] if `output_size` is not valid for
-    /// the algorithm.
+    /// the algorithm, e.g. if it's bigger than the [`OutputSize`]
+    /// associated type.
+    ///
+    /// [`OutputSize`]: OutputSizeUser::OutputSize
     fn new(output_size: usize) -> Result<Self, InvalidOutputSize>;
 
-    /// Finalize hasher and write hashing result into the `out` buffer.
+    /// Finalize hasher and write full hashing result into the `out` buffer.
     ///
-    /// `out` length must be equal to `output_size` used during construction.
-    fn finalize_variable_core(&mut self, buffer: &mut Buffer<Self>, out: &mut [u8]);
+    /// The result must be truncated to `output_size` used during hasher
+    /// construction. Truncation side is defined by the [`TRUNC_SIDE`]
+    /// associated constant.
+    ///
+    /// [`TRUNC_SIDE`]: VariableOutputCore::TRUNC_SIDE
+    fn finalize_variable_core(&mut self, buffer: &mut Buffer<Self>, out: &mut Output<Self>);
+}
+
+/// Type which used for defining truncation side in the [`VariableOutputCore`]
+/// trait.
+#[derive(Copy, Clone, Debug)]
+pub enum TruncSide {
+    /// Truncate left side, i.e. `&out[..n]`.
+    Left,
+    /// Truncate right side, i.e. `&out[m..]`.
+    Right,
 }

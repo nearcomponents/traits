@@ -1,5 +1,4 @@
-use super::{FixedOutput, FixedOutputReset, Reset, Update};
-use core::fmt;
+use super::{FixedOutput, FixedOutputReset, InvalidBufferSize, Reset, Update};
 use crypto_common::{Output, OutputSizeUser};
 use generic_array::typenum::Unsigned;
 
@@ -145,12 +144,12 @@ pub trait DynDigest {
     /// Write result into provided array and consume the hasher instance.
     ///
     /// Returns error if buffer length is not equal to `output_size`.
-    fn finalize_into(self, buf: &mut [u8]) -> Result<(), InvalidBufferLength>;
+    fn finalize_into(self, buf: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     /// Write result into provided array and reset the hasher instance.
     ///
     /// Returns error if buffer length is not equal to `output_size`.
-    fn finalize_into_reset(&mut self, out: &mut [u8]) -> Result<(), InvalidBufferLength>;
+    fn finalize_into_reset(&mut self, out: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     /// Reset hasher instance to its initial state.
     fn reset(&mut self);
@@ -183,21 +182,21 @@ impl<D: Update + FixedOutputReset + Reset + Clone + 'static> DynDigest for D {
             .into_boxed_slice()
     }
 
-    fn finalize_into(self, buf: &mut [u8]) -> Result<(), InvalidBufferLength> {
+    fn finalize_into(self, buf: &mut [u8]) -> Result<(), InvalidBufferSize> {
         if buf.len() == self.output_size() {
             FixedOutput::finalize_into(self, Output::<Self>::from_mut_slice(buf));
             Ok(())
         } else {
-            Err(InvalidBufferLength)
+            Err(InvalidBufferSize)
         }
     }
 
-    fn finalize_into_reset(&mut self, buf: &mut [u8]) -> Result<(), InvalidBufferLength> {
+    fn finalize_into_reset(&mut self, buf: &mut [u8]) -> Result<(), InvalidBufferSize> {
         if buf.len() == self.output_size() {
             FixedOutputReset::finalize_into_reset(self, Output::<Self>::from_mut_slice(buf));
             Ok(())
         } else {
-            Err(InvalidBufferLength)
+            Err(InvalidBufferSize)
         }
     }
 
@@ -222,17 +221,3 @@ impl Clone for Box<dyn DynDigest> {
         self.box_clone()
     }
 }
-
-/// Buffer length is not equal to the hash output size.
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct InvalidBufferLength;
-
-impl fmt::Display for InvalidBufferLength {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("invalid buffer length")
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for InvalidBufferLength {}

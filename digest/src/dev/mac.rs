@@ -73,7 +73,7 @@ macro_rules! new_mac_test {
     };
 }
 
-/// Define new test for a resettable MAC
+/// Define resettable MAC test
 #[macro_export]
 #[cfg(feature = "mac")]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "dev", feature = "mac"))))]

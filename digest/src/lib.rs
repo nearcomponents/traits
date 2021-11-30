@@ -46,15 +46,19 @@ use alloc::boxed::Box;
 #[cfg_attr(docsrs, doc(cfg(feature = "dev")))]
 pub mod dev;
 
+#[cfg(feature = "core-api")]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-api")))]
 pub mod core_api;
 mod digest;
 #[cfg(feature = "mac")]
 mod mac;
 
+#[cfg(feature = "core-api")]
+#[cfg_attr(docsrs, doc(cfg(feature = "core-api")))]
 pub use block_buffer;
 pub use crypto_common;
 
-pub use crate::digest::{Digest, DynDigest, HashMarker, InvalidBufferLength};
+pub use crate::digest::{Digest, DynDigest, HashMarker};
 #[cfg(feature = "mac")]
 pub use crypto_common::{InnerInit, InvalidLength, Key, KeyInit};
 pub use crypto_common::{Output, OutputSizeUser, Reset};
@@ -198,7 +202,7 @@ pub trait VariableOutput: Sized + Update {
     ///
     /// Returns `Err(InvalidOutputSize)` if `out` size is not equal to
     /// `self.output_size()`.
-    fn finalize_variable(self, out: &mut [u8]) -> Result<(), InvalidOutputSize>;
+    fn finalize_variable(self, out: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     /// Compute hash of `data` and write it to `output`.
     ///
@@ -211,7 +215,9 @@ pub trait VariableOutput: Sized + Update {
     ) -> Result<(), InvalidOutputSize> {
         let mut hasher = Self::new(output.len())?;
         hasher.update(input.as_ref());
-        hasher.finalize_variable(output)
+        hasher
+            .finalize_variable(output)
+            .map_err(|_| InvalidOutputSize)
     }
 
     /// Retrieve result into a boxed slice and consume hasher.
@@ -235,7 +241,7 @@ pub trait VariableOutputReset: VariableOutput + Reset {
     ///
     /// Returns `Err(InvalidOutputSize)` if `out` size is not equal to
     /// `self.output_size()`.
-    fn finalize_variable_reset(&mut self, out: &mut [u8]) -> Result<(), InvalidOutputSize>;
+    fn finalize_variable_reset(&mut self, out: &mut [u8]) -> Result<(), InvalidBufferSize>;
 
     /// Retrieve result into a boxed slice and reset the hasher state.
     ///
@@ -265,3 +271,16 @@ impl fmt::Display for InvalidOutputSize {
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for InvalidOutputSize {}
+
+/// Buffer length is not equal to hash output size.
+#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
+pub struct InvalidBufferSize;
+
+impl fmt::Display for InvalidBufferSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid buffer length")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidBufferSize {}

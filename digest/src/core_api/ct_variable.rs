@@ -1,5 +1,6 @@
 use super::{
-    AlgorithmName, Buffer, BufferKindUser, FixedOutputCore, Reset, UpdateCore, VariableOutputCore,
+    AlgorithmName, Buffer, BufferKindUser, FixedOutputCore, Reset, TruncSide, UpdateCore,
+    VariableOutputCore,
 };
 use crate::HashMarker;
 #[cfg(feature = "mac")]
@@ -17,8 +18,8 @@ use generic_array::{
 pub struct CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -29,8 +30,8 @@ where
 impl<T, OutSize> HashMarker for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore + HashMarker,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -40,8 +41,8 @@ where
 impl<T, OutSize> MacMarker for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore + MacMarker,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -50,8 +51,8 @@ where
 impl<T, OutSize> BlockSizeUser for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -61,8 +62,8 @@ where
 impl<T, OutSize> UpdateCore for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -75,8 +76,8 @@ where
 impl<T, OutSize> OutputSizeUser for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize> + 'static,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize> + 'static,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -86,8 +87,8 @@ where
 impl<T, OutSize> BufferKindUser for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -97,8 +98,8 @@ where
 impl<T, OutSize> FixedOutputCore for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize> + 'static,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize> + 'static,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -108,15 +109,22 @@ where
         buffer: &mut Buffer<Self>,
         out: &mut GenericArray<u8, Self::OutputSize>,
     ) {
-        self.inner.finalize_variable_core(buffer, out);
+        let mut full_res = Default::default();
+        self.inner.finalize_variable_core(buffer, &mut full_res);
+        let n = out.len();
+        let m = full_res.len() - n;
+        match T::TRUNC_SIDE {
+            TruncSide::Left => out.copy_from_slice(&full_res[..n]),
+            TruncSide::Right => out.copy_from_slice(&full_res[m..]),
+        }
     }
 }
 
 impl<T, OutSize> Default for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -132,8 +140,8 @@ where
 impl<T, OutSize> Reset for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {
@@ -146,8 +154,8 @@ where
 impl<T, OutSize> AlgorithmName for CtVariableCoreWrapper<T, OutSize>
 where
     T: VariableOutputCore + AlgorithmName,
-    OutSize: ArrayLength<u8> + IsLessOrEqual<T::MaxOutputSize>,
-    LeEq<OutSize, T::MaxOutputSize>: NonZero,
+    OutSize: ArrayLength<u8> + IsLessOrEqual<T::OutputSize>,
+    LeEq<OutSize, T::OutputSize>: NonZero,
     T::BlockSize: IsLess<U256>,
     Le<T::BlockSize, U256>: NonZero,
 {

@@ -13,13 +13,15 @@ categories = ["cryptography", "no-std"]
 
 [dependencies]
 generic-array = "0.14"
-block-buffer = "0.10"
 crypto-common = { version = "0.1", path = "../crypto-common" }
 
+block-buffer = { version = "0.10", optional = true }
 subtle = { version = "=2.4", default-features = false, optional = true }
 blobby = { version = "0.3", optional = true }
 
 [features]
+default = ["core-api"]
+core-api = ["block-buffer"] # Enable Core API traits
 mac = ["subtle"] # Enable MAC traits
 alloc = []
 std = ["alloc", "crypto-common/std"]
