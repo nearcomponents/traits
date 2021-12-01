@@ -15,20 +15,34 @@ categories = ["cryptography", "no-std"]
 keywords   = ["crypto", "ecc", "elliptic", "weierstrass"]
 
 [dependencies]
-crypto-bigint = { version = "0.2.2", features = ["generic-array"] }
+crypto-bigint = { version = "0.2.2", default-features = false, features = ["generic-array"] }
 generic-array = { version = "0.14", default-features = false }
-rand_core = { version = "0.6", default-features = false }
 subtle = { version = "=2.4", default-features = false }
 
 # optional dependencies
 base64ct = { version = "1", optional = true, default-features = false }
-ff = { version = "0.10", optional = true, default-features = false }
-group = { version = "0.10", optional = true, default-features = false }
 hex-literal = { version = "0.3", optional = true }
 pkcs8 = { version = "0.7", optional = true }
 serde = { version = "1", optional = true, default-features = false }
 serde_json = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 zeroize = { version = "=1.4", optional = true,  default-features = false }
+rand_core = { version = "0.6", default-features = false, optional = true }
+
+[dependencies.ff]
+version = "0.10"
+optional = true
+default-features = false
+git = "https://github.com/nearcomponents/ff"
+rev = "ed510df"
+# branch = "0.10.0-no-rand"
+
+[dependencies.group]
+version = "0.10"
+optional = true
+default-features = false
+git = "https://github.com/nearcomponents/group"
+rev = "e0a36d5"
+# branch = "0.10.0-no-rand"
 
 [dev-dependencies]
 hex-literal = "0.3"
@@ -43,7 +57,8 @@ ecdh = ["arithmetic", "zeroize"]
 hazmat = []
 jwk = ["alloc", "base64ct/alloc", "serde", "serde_json", "zeroize/alloc"]
 pem = ["alloc", "pkcs8/pem"]
-std = ["alloc", "rand_core/std"]
+rand = ["rand_core", "rand_core/std"]
+std = ["alloc", "rand"]
 
 [package.metadata.docs.rs]
 features = ["arithmetic", "ecdh", "jwk", "pem", "std"]

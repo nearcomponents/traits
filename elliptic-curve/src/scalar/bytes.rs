@@ -9,7 +9,10 @@ use generic_array::GenericArray;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeLess, CtOption};
 
 #[cfg(feature = "arithmetic")]
-use crate::{group::ff::PrimeField, NonZeroScalar, ProjectiveArithmetic, Scalar};
+use crate::{NonZeroScalar, ProjectiveArithmetic, Scalar};
+
+#[cfg(feature = "arithmetic")]
+use ff::PrimeField;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;

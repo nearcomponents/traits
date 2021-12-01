@@ -63,8 +63,10 @@ pub use self::{
 };
 pub use crypto_bigint as bigint;
 pub use generic_array::{self, typenum::consts};
-pub use rand_core;
 pub use subtle;
+
+#[cfg(feature = "rand_core")]
+pub use rand_core;
 
 #[cfg(feature = "arithmetic")]
 pub use {

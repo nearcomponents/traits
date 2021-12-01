@@ -4,7 +4,6 @@
 use crate::{
     bigint::{ArrayEncoding as _, U256},
     error::{Error, Result},
-    rand_core::RngCore,
     sec1::{FromEncodedPoint, ToEncodedPoint},
     subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption},
     weierstrass,
@@ -18,6 +17,9 @@ use core::{
 };
 use ff::{Field, PrimeField};
 use hex_literal::hex;
+
+#[cfg(feature = "rand_core")]
+use crate::rand_core::RngCore;
 
 #[cfg(feature = "bits")]
 use crate::{group::ff::PrimeFieldBits, ScalarBits};
@@ -92,6 +94,7 @@ pub type ScalarBytes = crate::ScalarBytes<MockCurve>;
 pub struct Scalar(U256);
 
 impl Field for Scalar {
+    #[cfg(feature = "rand_core")]
     fn random(_rng: impl RngCore) -> Self {
         unimplemented!();
     }
@@ -461,6 +464,7 @@ impl ToEncodedPoint<MockCurve> for ProjectivePoint {
 impl group::Group for ProjectivePoint {
     type Scalar = Scalar;
 
+    #[cfg(feature = "rand_core")]
     fn random(_rng: impl RngCore) -> Self {
         unimplemented!();
     }

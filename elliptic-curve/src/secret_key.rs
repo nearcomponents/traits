@@ -18,10 +18,10 @@ use core::{
 use zeroize::Zeroize;
 
 #[cfg(feature = "arithmetic")]
-use crate::{
-    rand_core::{CryptoRng, RngCore},
-    weierstrass, NonZeroScalar, ProjectiveArithmetic, PublicKey, Scalar,
-};
+use crate::{weierstrass, NonZeroScalar, ProjectiveArithmetic, PublicKey, Scalar};
+
+#[cfg(feature = "rand_core")]
+use crate::rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "jwk")]
 use crate::{
@@ -81,8 +81,8 @@ where
     C: Curve,
 {
     /// Generate a random [`SecretKey`]
-    #[cfg(feature = "arithmetic")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "arithmetic")))]
+    #[cfg(all(feature = "arithmetic", feature = "rand_core"))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "arithmetic", feature = "rand_core"))))]
     pub fn random(rng: impl CryptoRng + RngCore) -> Self
     where
         C: ProjectiveArithmetic,

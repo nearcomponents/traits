@@ -2,15 +2,16 @@
 // TODO(tarcieri): change bounds to `ScalarArithmetic` instead of `ProjectiveArithmetic`
 
 use crate::{
-    bigint::Encoding as _,
-    ops::Invert,
-    rand_core::{CryptoRng, RngCore},
-    Curve, Error, FieldBytes, ProjectiveArithmetic, Result, Scalar,
+    bigint::Encoding as _, ops::Invert, Curve, Error, FieldBytes, ProjectiveArithmetic, Result,
+    Scalar,
 };
 use core::{convert::TryFrom, ops::Deref};
 use ff::{Field, PrimeField};
 use generic_array::GenericArray;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
+
+#[cfg(feature = "rand_core")]
+use crate::rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "zeroize")]
 use {crate::SecretKey, zeroize::Zeroize};
@@ -36,6 +37,7 @@ impl<C> NonZeroScalar<C>
 where
     C: Curve + ProjectiveArithmetic,
 {
+    #[cfg(feature = "rand_core")]
     /// Generate a random `NonZeroScalar`
     pub fn random(mut rng: impl CryptoRng + RngCore) -> Self {
         // Use rejection sampling to eliminate zero values
